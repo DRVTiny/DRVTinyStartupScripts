@@ -1,0 +1,69 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:             postgresql
+# Required-Start:       $remote_fs $syslog
+# Required-Stop:        $remote_fs $syslog
+# Default-Start:        2 3 4 5
+# Default-Stop:         
+# Short-Description:    PostgreSQL database server
+### END INIT INFO
+slf=${0##*/}
+(( $(id -u) )) && {
+ echo 'Fatal: our EUID must be set to 0 prior to execution' >&2
+ exit 1
+}
+source /etc/default/$slf || {
+ echo "Fatal: cant source config file: /etc/default/$slf" >&2
+ exit 2
+}
+[[ -d ${PGDATA:=$(getent passwd ${RUNAS:=postgres} | cut -d: -f6)/current} ]] || {
+ echo 'Fatal: PostgreSQL data directory not defined' >&2
+ exit 3
+}
+[[ -e ${PGCTL:=/opt/PostgreSQL/current/bin/pg_ctl} ]] || {
+ echo 'Fatal: we dont know where is pg_ctl executable' >&2
+ exit 4
+}
+
+export PGDATA
+errc=0
+start_ () {
+ sudo -u $RUNAS $PGCTL -D $PGDATA start; errc=$?
+ return $errc
+}
+stop_ () {
+ sudo -u $RUNAS $PGCTL -D $PGDATA -m fast stop; errc=$?
+ return $errc
+}
+status_ () {
+ sudo -u $RUNAS $PGCTL -D $PGDATA status; errc=$?
+ return $errc
+}
+
+case $1 in
+start)
+ echo -e $"Starting PostgreSQL database server...\t" >&2
+ start_ &>/dev/null && echo -n 'OK' >&2 || echo -n 'FAIL' >&2
+ exit $errc
+;;
+stop)
+ echo -e $"Stopping PostgreSQL database server...\t" >&2
+ stop_  &>/dev/null && echo -n 'OK' >&2 || echo -n 'FAIL' >&2
+ exit $errc
+;;
+restart)
+ stop_
+ erc1=$errc
+ start_
+ exit $(( (erc1<<8) | errc )) 
+;;
+status)
+ status_
+ exit $errc
+;;
+*)
+ echo "Usage: service $slf (start|stop|restart|status)" >&2
+ exit 128
+;;
+esac
