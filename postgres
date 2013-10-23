@@ -43,13 +43,13 @@ status_ () {
 
 case $1 in
 start)
- echo -e $"Starting PostgreSQL database server...\t" >&2
- start_ &>/dev/null && echo -n 'OK' >&2 || echo -n 'FAIL' >&2
+ echo -ne $"Starting PostgreSQL database server...\t" >&2
+ start_ &>/dev/null && echo 'OK' >&2 || echo 'FAIL' >&2
  exit $errc
 ;;
 stop)
- echo -e $"Stopping PostgreSQL database server...\t" >&2
- stop_  &>/dev/null && echo -n 'OK' >&2 || echo -n 'FAIL' >&2
+ echo -ne $"Stopping PostgreSQL database server...\t" >&2
+ stop_  &>/dev/null && echo 'OK' >&2 || echo 'FAIL' >&2
  exit $errc
 ;;
 restart)
